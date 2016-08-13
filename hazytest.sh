@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Version 1.0
+
 myshuf() {
   perl -MList::Util=shuffle -e 'print shuffle(<>);' "$@";
 }
