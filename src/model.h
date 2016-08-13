@@ -17,14 +17,6 @@
 #include "vector.h"
 #include "real.h"
 
-struct Node {
-  int32_t parent;
-  int32_t left;
-  int32_t right;
-  int64_t count;
-  bool binary;
-};
-
 class Model {
   private:
     Matrix& wi_;
@@ -38,13 +30,10 @@ class Model {
 
     static real lr_;
 
-    std::vector<int32_t> negatives;
     size_t negpos;
     std::vector< std::vector<int32_t> > paths;
     std::vector< std::vector<bool> > codes;
-    std::vector<Node> tree;
 
-    static const int32_t NEGATIVE_TABLE_SIZE = 10000000;
     static constexpr real MIN_LR = 0.000001;
 
   public:
@@ -53,19 +42,10 @@ class Model {
     void setLearningRate(real);
     real getLearningRate();
 
-    real binaryLogistic(int32_t, bool);
-    real negativeSampling(int32_t);
-    real hierarchicalSoftmax(int32_t);
     real softmax(int32_t);
 
     int32_t predict(const std::vector<int32_t>&);
-    void dfs(int32_t, real, real&, int32_t&);
     real update(const std::vector<int32_t>&, int32_t);
-
-    void setTargetCounts(const std::vector<int64_t>&);
-    void initTableNegatives(const std::vector<int64_t>&);
-    int32_t getNegative(int32_t target);
-    void buildTree(const std::vector<int64_t>&);
 
     std::minstd_rand rng;
 };

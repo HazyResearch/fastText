@@ -88,13 +88,6 @@ const std::vector<int32_t> Dictionary::getNgrams(const std::string& word) {
   return ngrams;
 }
 
-bool Dictionary::discard(int32_t id, real rand) {
-  assert(id >= 0);
-  assert(id < nwords_);
-  if (args.model == model_name::sup) return false;
-  return rand > pdiscard_[id];
-}
-
 int32_t Dictionary::getId(const std::string& w) {
   int32_t h = find(w);
   return word2int_[h];
@@ -254,13 +247,12 @@ int32_t Dictionary::getLine(std::ifstream& ifs,
     int32_t wid = getId(token);
     if (wid < 0) continue;
     entry_type type = getType(wid);
-    if (type == entry_type::word && !discard(wid, uniform(rng))) {
+    if (type == entry_type::word) {
       words.push_back(wid);
     }
     if (type == entry_type::label) {
       labels.push_back(wid - nwords_);
     }
-    if (words.size() > MAX_LINE_SIZE && args.model != model_name::sup) break;
   }
   return ntokens;
 }
