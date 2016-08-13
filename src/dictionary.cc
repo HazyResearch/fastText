@@ -174,7 +174,6 @@ void Dictionary::readFromFile(std::ifstream& ifs) {
   }
   std::cout << "\rRead " << ntokens_  / 1000000 << "M words" << std::endl;
   threshold(args.minCount);
-  initTableDiscard();
   initNgrams();
 }
 
@@ -198,14 +197,6 @@ void Dictionary::threshold(int64_t t) {
     word2int_[h] = size_++;
     if (it->type == entry_type::word) nwords_++;
     if (it->type == entry_type::label) nlabels_++;
-  }
-}
-
-void Dictionary::initTableDiscard() {
-  pdiscard_.resize(size_);
-  for (size_t i = 0; i < size_; i++) {
-    real f = real(words_[i].count) / real(ntokens_);
-    pdiscard_[i] = sqrt(args.t / f) + args.t / f;
   }
 }
 
@@ -297,6 +288,5 @@ void Dictionary::load(std::ifstream& ifs) {
     words_.push_back(e);
     word2int_[find(e.word)] = i;
   }
-  initTableDiscard();
   initNgrams();
 }
