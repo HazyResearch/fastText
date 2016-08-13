@@ -1,4 +1,6 @@
 # fastText, forked for Hazy Research
+![Travis CI build status](https://travis-ci.org/HazyResearch/fastText.svg?branch=master)
+
 
 fastText is a library for efficient learning of word representations and sentence classification.
 
