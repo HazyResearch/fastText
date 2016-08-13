@@ -11,79 +11,14 @@ These include :
 * (gcc-4.6.3 or newer) or (clang-3.3 or newer)
 
 Compilation is carried out using a Makefile, so you will need to have a working **make**.
-For the word-similarity evaluation script you will need:
-
-* python 2.6 or newer
-* numpy & scipy
-
-## Building fastText
-
-In order to build `fastText`, use the following:
-
-```
-$ git clone https://github.com/facebookresearch/fastText.git
-$ cd fastText
-$ make
-```
-
-This will produce object files for all the classes as well as the main binary `fasttext`.
-If you do not plan on using the default system-wide compiler, update the two macros defined at the beginning of the Makefile (CC and INCLUDES).
-
-### Building with Docker
-
-If you inted to build with Docker, a Docker file is available here [fastText-Docker](https://github.com/xeb/fastText-docker).
-
-## Example use cases
-
-This library has two main use cases: word representation learning and text classification.
-These were described in the two papers [1](#enriching-word-vectors-with-subword-information) and [2](#bag-of-tricks-for-efficient-text-classification).
-
-### Word representation learning
-
-In order to learn word vectors, as described in [1](#enriching-word-vectors-with-subword-information), do:
-
-```
-$ ./fasttext skipgram -input data.txt -output model
-```
-
-where `data.txt` is a training file containing `utf-8` encoded text.
-By default the word vectors will take into account character n-grams from 3 to 6 characters.
-At the end of optimization the program will save two files: `model.bin` and `model.vec`.
-`model.vec` is a text file containing the word vectors, one per line.
-`model.bin` is a binary file containing the parameters of the model along with the dictionary and all hyper parameters.
-The binary file can be used later to compute word vectors or to restart the optimization.
-
-### Obtaining word vectors for out-of-vocabulary words
-
-The previously trained model can be used to compute word vectors for out-of-vocabulary words.
-Provided you have a text file `queries.txt` containing words for which you want to compute vectors, use the following command:
-
-```
-$ ./fasttext print-vectors model.bin < queries.txt
-```
-
-This will output word vectors to the standard output, one vector per line.
-This can also be used with pipes:
-
-```
-$ cat queries.txt | ./fasttext print-vectors model.bin
-```
-
-See the provided scripts for an example. For instance, running:
-
-```
-$ ./word-vector-example.sh
-```
-
-will compile the code, download data, compute word vectors and evaluate them on the rare words similarity dataset RW [Thang et al. 2013].
 
 ### Text classification
 
 This library can also be used to train supervised text classifiers, for instance for sentiment analysis.
-In order to train a text classifier using the method described in [2](#bag-of-tricks-for-efficient-text-classification), use:
+In order to train a text classifier using the method described in [1](#bag-of-tricks-for-efficient-text-classification), use:
 
 ```
-$ ./fasttext supervised -input train.txt -output model
+$ ./fasttext train -input train.txt -output model
 ```
 
 where `train.txt` is a text file containing a training sentence per line along with the labels.
@@ -121,12 +56,9 @@ The following arguments are mandatory:
 The following arguments are optional:
   -lr         learning rate [0.05]
   -dim        size of word vectors [100]
-  -ws         size of the context window [5]
   -epoch      number of epochs [5]
   -minCount   minimal number of word occurences [1]
-  -neg        number of negatives sampled [5]
   -wordNgrams max length of word ngram [1]
-  -loss       loss function {ns, hs, softmax} [ns]
   -bucket     number of buckets [2000000]
   -minn       min length of char ngram [3]
   -maxn       max length of char ngram [6]
@@ -136,28 +68,13 @@ The following arguments are optional:
   -label      labels prefix [__label__]
 ```
 
-Defaults may vary by mode. (Word-representation modes `skipgram` and `cbow` use a default `-minCount` of 5.)
-
 ## References
 
-Please cite [1](#enriching-word-vectors-with-subword-information) if using this code for learning word representations or [2](#bag-of-tricks-for-efficient-text-classification) if using for text classification.
-
-### Enriching Word Vectors with Subword Information
-
-[1] P. Bojanowski\*, E. Grave\*, A. Joulin, T. Mikolov, [*Enriching Word Vectors with Subword Information*](https://arxiv.org/pdf/1607.04606v1.pdf)
-
-```
-@article{bojanowski2016enriching,
-  title={Enriching Word Vectors with Subword Information},
-  author={Bojanowski, Piotr and Grave, Edouard and Joulin, Armand and Mikolov, Tomas},
-  journal={arXiv preprint arXiv:1607.04606},
-  year={2016}
-}
-```
+Please cite [1](#bag-of-tricks-for-efficient-text-classification) if using this code for text classification.
 
 ### Bag of Tricks for Efficient Text Classification
 
-[2] A. Joulin, E. Grave, P. Bojanowski, T. Mikolov, [*Bag of Tricks for Efficient Text Classification*](https://arxiv.org/pdf/1607.01759v2.pdf)
+[1] A. Joulin, E. Grave, P. Bojanowski, T. Mikolov, [*Bag of Tricks for Efficient Text Classification*](https://arxiv.org/pdf/1607.01759v2.pdf)
 
 ```
 @article{joulin2016bag,
@@ -167,16 +84,6 @@ Please cite [1](#enriching-word-vectors-with-subword-information) if using this 
   year={2016}
 }
 ```
-
-(\* These authors contributed equally.)
-
-## Join the fastText community
-
-* Facebook page: https://www.facebook.com/groups/1174547215919768
-* Google group: https://groups.google.com/forum/#!forum/fasttext-library
-* Contact: [egrave@fb.com](mailto:egrave@fb.com), [bojanowski@fb.com](mailto:bojanowski@fb.com), [ajoulin@fb.com](mailto:ajoulin@fb.com), [tmikolov@fb.com](mailto:tmikolov@fb.com)
-
-See the CONTRIBUTING file for information about how to help out.
 
 ## License
 
