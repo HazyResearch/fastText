@@ -17,8 +17,8 @@ Compilation is carried out using a Makefile, so you will need to have a working 
 Performance benchmarks on Raiders 7 are as follows:
 
 **hazytest.sh v1.0 with dbpedia labels 8 and 9 (12 threads)**
-| **Merged branch** | **P@1** | **Real time (best of 3)** | **Train time (best of 3)** | **W/T/S (best of 3)** |
 
+| **Merged branch** | **P@1** | **Real time (best of 3)** | **Train time (best of 3)** | **W/T/S (best of 3)** |
 |:-----------------:|:-------:|:-------------------------:|:--------------------------:|:-------------------:|
 | None   |   0.997   |  26.47 sec   |   4.00 sec  | 953,558 |
 | minimize   |   0.997   |  25.99 sec   |   3.67 sec  | 976,582 | 
