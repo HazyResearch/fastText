@@ -2,10 +2,8 @@ language: cpp
 sudo: required
 dist: trusty
 compiler:
-- clang
+  - clang
 os:
-before_script:
-- travis_retry bundle
-- travis_retry ./configure --llvm-config=llvm-config-3.6; fi
+  - linux
 script:
   - ./hazytest.sh
