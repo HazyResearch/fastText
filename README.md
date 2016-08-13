@@ -1,4 +1,4 @@
-# fastText
+# fastText, forked for Hazy Research
 
 fastText is a library for efficient learning of word representations and sentence classification.
 
