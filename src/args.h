@@ -12,9 +12,6 @@
 
 #include <string>
 
-enum class model_name : int {cbow=1, sg, sup};
-enum class loss_name : int {hs=1, ns, softmax};
-
 class Args {
   public:
     Args();
@@ -24,13 +21,9 @@ class Args {
     double lr;
     int lrUpdateRate;
     int dim;
-    int ws;
     int epoch;
     int minCount;
-    int neg;
     int wordNgrams;
-    loss_name loss;
-    model_name model;
     int bucket;
     int minn;
     int maxn;

@@ -43,7 +43,7 @@ make
 OPTS="-dim 64 -lr 0.1 -wordNgrams 2 -minCount 1 -bucket 10000000 -epoch 10 -thread 12"
 
 divider "TRAINING"
-time ./fasttext supervised -input "${DATADIR}/dbpedia.train" -output "${RESULTDIR}/dbpedia" ${OPTS}
+time ./fasttext train -input "${DATADIR}/dbpedia.train" -output "${RESULTDIR}/dbpedia" ${OPTS}
 
 divider "TESTING"
 ./fasttext test "${RESULTDIR}/dbpedia.bin" "${DATADIR}/dbpedia.test"

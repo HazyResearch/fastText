@@ -8,7 +8,7 @@
  */
 
 #include <fenv.h>
-#include <time.h>
+#include <sys/time.h>
 #include <math.h>
 
 #include <iostream>
@@ -126,41 +126,6 @@ void supervised(Model& model,
   nexamples++;
 }
 
-void cbow(Dictionary& dict, Model& model,
-          const std::vector<int32_t>& line,
-          double& loss, int32_t& nexamples) {
-  std::vector<int32_t> bow;
-  std::uniform_int_distribution<> uniform(1, args.ws);
-  for (int32_t w = 0; w < line.size(); w++) {
-    int32_t boundary = uniform(model.rng);
-    bow.clear();
-    for (int32_t c = -boundary; c <= boundary; c++) {
-      if (c != 0 && w + c >= 0 && w + c < line.size()) {
-        const std::vector<int32_t>& ngrams = dict.getNgrams(line[w + c]);
-        bow.insert(bow.end(), ngrams.cbegin(), ngrams.cend());
-      }
-    }
-    loss += model.update(bow, line[w]);
-    nexamples++;
-  }
-}
-
-void skipgram(Dictionary& dict, Model& model,
-              const std::vector<int32_t>& line,
-              double& loss, int32_t& nexamples) {
-  std::uniform_int_distribution<> uniform(1, args.ws);
-  for (int32_t w = 0; w < line.size(); w++) {
-    int32_t boundary = uniform(model.rng);
-    const std::vector<int32_t>& ngrams = dict.getNgrams(line[w]);
-    for (int32_t c = -boundary; c <= boundary; c++) {
-      if (c != 0 && w + c >= 0 && w + c < line.size()) {
-        loss += model.update(ngrams, line[w + c]);
-        nexamples++;
-      }
-    }
-  }
-}
-
 void test(Dictionary& dict, Model& model, std::string filename) {
   int32_t nexamples = 0;
   double precision = 0.0;
@@ -215,11 +180,6 @@ void trainThread(Dictionary& dict, Matrix& input, Matrix& output,
   utils::seek(ifs, threadId * utils::size(ifs) / args.thread);
 
   Model model(input, output, args.dim, args.lr, threadId);
-  if (args.model == model_name::sup) {
-    model.setTargetCounts(dict.getCounts(entry_type::label));
-  } else {
-    model.setTargetCounts(dict.getCounts(entry_type::word));
-  }
 
   real progress;
   const int64_t ntokens = dict.ntokens();
@@ -231,14 +191,8 @@ void trainThread(Dictionary& dict, Matrix& input, Matrix& output,
     deltaCount = dict.getLine(ifs, line, labels, model.rng);
     tokenCount += deltaCount;
     printCount += deltaCount;
-    if (args.model == model_name::sup) {
-      dict.addNgrams(line, args.wordNgrams);
-      supervised(model, line, labels, loss, nexamples);
-    } else if (args.model == model_name::cbow) {
-      cbow(dict, model, line, loss, nexamples);
-    } else if (args.model == model_name::sg) {
-      skipgram(dict, model, line, loss, nexamples);
-    }
+    dict.addNgrams(line, args.wordNgrams);
+    supervised(model, line, labels, loss, nexamples);
     if (tokenCount > args.lrUpdateRate) {
       info::allWords += tokenCount;
       info::allLoss += loss;
@@ -264,11 +218,9 @@ void printUsage() {
   std::cout
     << "usage: fasttext <command> <args>\n\n"
     << "The commands supported by fasttext are:\n\n"
-    << "  supervised       train a supervised classifier\n"
+    << "  train            train a supervised classifier\n"
     << "  test             evaluate a supervised classifier\n"
     << "  predict          predict most likely label\n"
-    << "  skipgram         train a skipgram model\n"
-    << "  cbow             train a cbow model\n"
     << "  print-vectors    print vectors given a trained model\n"
     << std::endl;
 }
@@ -305,7 +257,6 @@ void test(int argc, char** argv) {
   Matrix input, output;
   loadModel(std::string(argv[2]), dict, input, output);
   Model model(input, output, args.dim, args.lr, 1);
-  model.setTargetCounts(dict.getCounts(entry_type::label));
   test(dict, model, std::string(argv[3]));
   exit(0);
 }
@@ -319,7 +270,6 @@ void predict(int argc, char** argv) {
   Matrix input, output;
   loadModel(std::string(argv[2]), dict, input, output);
   Model model(input, output, args.dim, args.lr, 1);
-  model.setTargetCounts(dict.getCounts(entry_type::label));
   predict(dict, model, std::string(argv[3]));
   exit(0);
 }
@@ -350,16 +300,13 @@ void train(int argc, char** argv) {
 
   Matrix input(dict.nwords() + args.bucket, args.dim);
   Matrix output;
-  if (args.model == model_name::sup) {
-    output = Matrix(dict.nlabels(), args.dim);
-  } else {
-    output = Matrix(dict.nwords(), args.dim);
-  }
+  output = Matrix(dict.nlabels(), args.dim);
   input.uniform(1.0 / args.dim);
   output.zero();
 
   info::start = clock();
-  time_t t0 = time(nullptr);
+  struct timeval t, t0;
+  gettimeofday(&t0, NULL);
   std::vector<std::thread> threads;
   for (int32_t i = 0; i < args.thread; i++) {
     threads.push_back(std::thread(&trainThread, std::ref(dict),
@@ -368,7 +315,9 @@ void train(int argc, char** argv) {
   for (auto it = threads.begin(); it != threads.end(); ++it) {
     it->join();
   }
-  double trainTime = difftime(time(nullptr), t0);
+  gettimeofday(&t, NULL);
+  double trainTime = double(t.tv_sec - t0.tv_sec) +
+                     double(t.tv_usec - t0.tv_usec) / 1e6;
   std::cout << "Train time: " << trainTime << " sec" << std::endl;
 
   if (args.output.size() != 0) {
@@ -384,7 +333,7 @@ int main(int argc, char** argv) {
     exit(EXIT_FAILURE);
   }
   std::string command(argv[1]);
-  if (command == "skipgram" || command == "cbow" || command == "supervised") {
+  if (command == "train") {
     train(argc, argv);
   } else if (command == "test") {
     test(argc, argv);
