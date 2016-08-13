@@ -18,6 +18,9 @@ opt: fasttext
 debug: CXXFLAGS += -g -O0 -fno-inline
 debug: fasttext
 
+warn: CXXFLAGS += -O3 -Wall -funroll-loops
+warn: fasttext
+
 args.o: src/args.cc src/args.h
 	$(CXX) $(CXXFLAGS) -c src/args.cc
 

@@ -33,13 +33,11 @@ class Dictionary {
     static const int32_t MAX_LINE_SIZE = 1024;
 
     int32_t find(const std::string&);
-    void initTableDiscard();
     void initNgrams();
     void threshold(int64_t);
 
     std::vector<int32_t> word2int_;
     std::vector<entry> words_;
-    std::vector<real> pdiscard_;
     int32_t size_;
     int32_t nwords_;
     int32_t nlabels_;
@@ -56,7 +54,6 @@ class Dictionary {
     int64_t ntokens();
     int32_t getId(const std::string&);
     entry_type getType(int32_t);
-    bool discard(int32_t, real);
     std::string getWord(int32_t);
     const std::vector<int32_t>& getNgrams(int32_t);
     const std::vector<int32_t> getNgrams(const std::string&);

@@ -14,18 +14,13 @@
 
 #include "real.h"
 
-#define SIGMOID_TABLE_SIZE 512
-#define MAX_SIGMOID 8
 #define LOG_TABLE_SIZE 512
 
 namespace utils {
 
   real log(real);
-  real sigmoid(real);
 
   void initTables();
-  void initSigmoid();
-  void initLog();
   void freeTables();
 
   int64_t size(std::ifstream&);

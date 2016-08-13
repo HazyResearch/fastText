@@ -88,13 +88,6 @@ const std::vector<int32_t> Dictionary::getNgrams(const std::string& word) {
   return ngrams;
 }
 
-bool Dictionary::discard(int32_t id, real rand) {
-  assert(id >= 0);
-  assert(id < nwords_);
-  if (args.model == model_name::sup) return false;
-  return rand > pdiscard_[id];
-}
-
 int32_t Dictionary::getId(const std::string& w) {
   int32_t h = find(w);
   return word2int_[h];
@@ -181,7 +174,6 @@ void Dictionary::readFromFile(std::ifstream& ifs) {
   }
   std::cout << "\rRead " << ntokens_  / 1000000 << "M words" << std::endl;
   threshold(args.minCount);
-  initTableDiscard();
   initNgrams();
 }
 
@@ -205,14 +197,6 @@ void Dictionary::threshold(int64_t t) {
     word2int_[h] = size_++;
     if (it->type == entry_type::word) nwords_++;
     if (it->type == entry_type::label) nlabels_++;
-  }
-}
-
-void Dictionary::initTableDiscard() {
-  pdiscard_.resize(size_);
-  for (size_t i = 0; i < size_; i++) {
-    real f = real(words_[i].count) / real(ntokens_);
-    pdiscard_[i] = sqrt(args.t / f) + args.t / f;
   }
 }
 
@@ -254,13 +238,12 @@ int32_t Dictionary::getLine(std::ifstream& ifs,
     int32_t wid = getId(token);
     if (wid < 0) continue;
     entry_type type = getType(wid);
-    if (type == entry_type::word && !discard(wid, uniform(rng))) {
+    if (type == entry_type::word) {
       words.push_back(wid);
     }
     if (type == entry_type::label) {
       labels.push_back(wid - nwords_);
     }
-    if (words.size() > MAX_LINE_SIZE && args.model != model_name::sup) break;
   }
   return ntokens;
 }
@@ -305,6 +288,5 @@ void Dictionary::load(std::ifstream& ifs) {
     words_.push_back(e);
     word2int_[find(e.word)] = i;
   }
-  initTableDiscard();
   initNgrams();
 }

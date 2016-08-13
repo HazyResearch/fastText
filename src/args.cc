@@ -18,13 +18,9 @@
 Args::Args() {
   lr = 0.05;
   dim = 100;
-  ws = 5;
   epoch = 5;
-  minCount = 5;
-  neg = 5;
+  minCount = 1;
   wordNgrams = 1;
-  loss = loss_name::ns;
-  model = model_name::sg;
   bucket = 2000000;
   minn = 3;
   maxn = 6;
@@ -35,14 +31,6 @@ Args::Args() {
 }
 
 void Args::parseArgs(int argc, char** argv) {
-  std::string command(argv[1]);
-  if (command == "supervised") {
-    model = model_name::sup;
-    loss = loss_name::softmax;
-    minCount = 1;
-  } else if (command == "cbow") {
-    model = model_name::cbow;
-  }
   int ai = 2;
   while (ai < argc) {
     if (argv[ai][0] != '-') {
@@ -66,28 +54,12 @@ void Args::parseArgs(int argc, char** argv) {
       lrUpdateRate = atoi(argv[ai + 1]);
     } else if (strcmp(argv[ai], "-dim") == 0) {
       dim = atoi(argv[ai + 1]);
-    } else if (strcmp(argv[ai], "-ws") == 0) {
-      ws = atoi(argv[ai + 1]);
     } else if (strcmp(argv[ai], "-epoch") == 0) {
       epoch = atoi(argv[ai + 1]);
     } else if (strcmp(argv[ai], "-minCount") == 0) {
       minCount = atoi(argv[ai + 1]);
-    } else if (strcmp(argv[ai], "-neg") == 0) {
-      neg = atoi(argv[ai + 1]);
     } else if (strcmp(argv[ai], "-wordNgrams") == 0) {
       wordNgrams = atoi(argv[ai + 1]);
-    } else if (strcmp(argv[ai], "-loss") == 0) {
-      if (strcmp(argv[ai + 1], "hs") == 0) {
-        loss = loss_name::hs;
-      } else if (strcmp(argv[ai + 1], "ns") == 0) {
-        loss = loss_name::ns;
-      } else if (strcmp(argv[ai + 1], "softmax") == 0) {
-        loss = loss_name::softmax;
-      } else {
-        std::cout << "Unknown loss: " << argv[ai + 1] << std::endl;
-        printHelp();
-        exit(EXIT_FAILURE);
-      }
     } else if (strcmp(argv[ai], "-bucket") == 0) {
       bucket = atoi(argv[ai + 1]);
     } else if (strcmp(argv[ai], "-minn") == 0) {
@@ -124,12 +96,9 @@ void Args::printHelp() {
     << "  -lr           learning rate [" << lr << "]\n"
     << "  -lrUpdateRate change the rate of updates for the learning rate [" << lrUpdateRate << "]\n"
     << "  -dim          size of word vectors [" << dim << "]\n"
-    << "  -ws           size of the context window [" << ws << "]\n"
     << "  -epoch        number of epochs [" << epoch << "]\n"
     << "  -minCount     minimal number of word occurences [" << minCount << "]\n"
-    << "  -neg          number of negatives sampled [" << neg << "]\n"
     << "  -wordNgrams   max length of word ngram [" << wordNgrams << "]\n"
-    << "  -loss         loss function {ns, hs, softmax} [ns]\n"
     << "  -bucket       number of buckets [" << bucket << "]\n"
     << "  -minn         min length of char ngram [" << minn << "]\n"
     << "  -maxn         max length of char ngram [" << maxn << "]\n"
@@ -142,13 +111,9 @@ void Args::printHelp() {
 void Args::save(std::ofstream& ofs) {
   if (ofs.is_open()) {
     ofs.write((char*) &(dim), sizeof(int));
-    ofs.write((char*) &(ws), sizeof(int));
     ofs.write((char*) &(epoch), sizeof(int));
     ofs.write((char*) &(minCount), sizeof(int));
-    ofs.write((char*) &(neg), sizeof(int));
     ofs.write((char*) &(wordNgrams), sizeof(int));
-    ofs.write((char*) &(loss), sizeof(loss_name));
-    ofs.write((char*) &(model), sizeof(model_name));
     ofs.write((char*) &(bucket), sizeof(int));
     ofs.write((char*) &(minn), sizeof(int));
     ofs.write((char*) &(maxn), sizeof(int));
@@ -160,13 +125,9 @@ void Args::save(std::ofstream& ofs) {
 void Args::load(std::ifstream& ifs) {
   if (ifs.is_open()) {
     ifs.read((char*) &(dim), sizeof(int));
-    ifs.read((char*) &(ws), sizeof(int));
     ifs.read((char*) &(epoch), sizeof(int));
     ifs.read((char*) &(minCount), sizeof(int));
-    ifs.read((char*) &(neg), sizeof(int));
     ifs.read((char*) &(wordNgrams), sizeof(int));
-    ifs.read((char*) &(loss), sizeof(loss_name));
-    ifs.read((char*) &(model), sizeof(model_name));
     ifs.read((char*) &(bucket), sizeof(int));
     ifs.read((char*) &(minn), sizeof(int));
     ifs.read((char*) &(maxn), sizeof(int));

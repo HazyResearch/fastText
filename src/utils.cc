@@ -13,7 +13,6 @@
 #include <ios>
 
 namespace utils {
-  real* t_sigmoid;
   real* t_log;
 
   real log(real x) {
@@ -24,31 +23,7 @@ namespace utils {
     return t_log[i];
   }
 
-  real sigmoid(real x) {
-    if (x < -MAX_SIGMOID) {
-      return 0.0;
-    } else if (x > MAX_SIGMOID) {
-      return 1.0;
-    } else {
-      int i = int((x + MAX_SIGMOID) * SIGMOID_TABLE_SIZE / MAX_SIGMOID / 2);
-      return t_sigmoid[i];
-    }
-  }
-
   void initTables() {
-    initSigmoid();
-    initLog();
-  }
-
-  void initSigmoid() {
-    t_sigmoid = new real[SIGMOID_TABLE_SIZE + 1];
-    for (int i = 0; i < SIGMOID_TABLE_SIZE + 1; i++) {
-      real x = real(i * 2 * MAX_SIGMOID) / SIGMOID_TABLE_SIZE - MAX_SIGMOID;
-      t_sigmoid[i] = 1.0 / (1.0 + std::exp(-x));
-    }
-  }
-
-  void initLog() {
     t_log = new real[LOG_TABLE_SIZE + 1];
     for (int i = 0; i < LOG_TABLE_SIZE + 1; i++) {
       real x = (real(i) + 1e-5) / LOG_TABLE_SIZE;
@@ -57,9 +32,7 @@ namespace utils {
   }
 
   void freeTables() {
-    delete[] t_sigmoid;
     delete[] t_log;
-    t_sigmoid = nullptr;
     t_log = nullptr;
   }
 
@@ -69,7 +42,6 @@ namespace utils {
   }
 
   void seek(std::ifstream& ifs, int64_t pos) {
-    char c;
     ifs.clear();
     ifs.seekg(std::streampos(pos));
   }
