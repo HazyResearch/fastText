@@ -18,12 +18,10 @@
 #include "real.h"
 
 typedef int32_t id_type;
-enum class entry_type : int8_t {word=0, label=1};
 
 struct entry {
   std::string word;
   int64_t count;
-  entry_type type;
   std::vector<int32_t> subwords;
 };
 
@@ -40,7 +38,6 @@ class Dictionary {
     std::vector<entry> words_;
     int32_t size_;
     int32_t nwords_;
-    int32_t nlabels_;
     int64_t ntokens_;
 
   public:
@@ -50,10 +47,8 @@ class Dictionary {
 
     Dictionary();
     int32_t nwords();
-    int32_t nlabels();
     int64_t ntokens();
     int32_t getId(const std::string&);
-    entry_type getType(int32_t);
     std::string getWord(int32_t);
     const std::vector<int32_t>& getNgrams(int32_t);
     const std::vector<int32_t> getNgrams(const std::string&);
@@ -62,13 +57,11 @@ class Dictionary {
     void add(const std::string&);
     std::string readWord(std::ifstream&);
     void readFromFile(std::ifstream&);
-    std::string getLabel(int32_t);
     void save(std::ofstream&);
     void load(std::ifstream&);
-    std::vector<int64_t> getCounts(entry_type);
+    std::vector<int64_t> getCounts();
     void addNgrams(std::vector<int32_t>&, int32_t);
-    int32_t getLine(std::ifstream&, std::vector<int32_t>&,
-                    std::vector<int32_t>&, std::minstd_rand&);
+    int32_t getLine(std::ifstream&, std::vector<int32_t>&);
 };
 
 #endif

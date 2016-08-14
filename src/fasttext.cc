@@ -117,30 +117,36 @@ void printInfo(Model& model, real progress) {
 
 void supervised(Model& model,
                 const std::vector<int32_t>& line,
-                const std::vector<int32_t>& labels,
+                real marginal,
                 double& loss, int32_t& nexamples) {
-  if (labels.size() == 0 || line.size() == 0) return;
-  std::uniform_int_distribution<> uniform(0, labels.size() - 1);
-  int32_t i = uniform(model.rng);
-  loss += model.update(line, labels[i]);
+  if (line.size() == 0) return;
+  loss += model.update(line, marginal);
   nexamples++;
 }
 
-void test(Dictionary& dict, Model& model, std::string filename) {
+void test(Dictionary& dict, Model& model, std::string data,
+          std::string marginals) {
   int32_t nexamples = 0;
   double precision = 0.0;
-  std::vector<int32_t> line, labels;
-  std::ifstream ifs(filename);
-  if (!ifs.is_open()) {
+  std::vector<int32_t> line;
+  std::ifstream ifs(data);
+  std::ifstream ifsm(marginals);
+  if (!ifs.is_open() || !ifsm.is_open()) {
     std::cerr << "Test file cannot be opened!" << std::endl;
     exit(EXIT_FAILURE);
   }
+  real marginal;
   while (ifs.peek() != EOF) {
-    dict.getLine(ifs, line, labels, model.rng);
+    dict.getLine(ifs, line);
     dict.addNgrams(line, args.wordNgrams);
-    if (labels.size() > 0 && line.size() > 0) {
-      int32_t i = model.predict(line);
-      if (std::find(labels.begin(), labels.end(), i) != labels.end()) {
+    ifsm >> marginal;
+    if (ifsm.eof()) {
+      ifsm.clear();
+      ifsm.seekg(std::streampos(0));
+    }
+    if (line.size() > 0) {
+      real prob = model.predict(line);
+      if ((prob >= 0.5) == (marginal >= 0.5)) {
         precision += 1.0;
       }
       nexamples++;
@@ -153,18 +159,17 @@ void test(Dictionary& dict, Model& model, std::string filename) {
 }
 
 void predict(Dictionary& dict, Model& model, std::string filename) {
-  std::vector<int32_t> line, labels;
+  std::vector<int32_t> line;
   std::ifstream ifs(filename);
   if (!ifs.is_open()) {
     std::cerr << "Test file cannot be opened!" << std::endl;
     exit(EXIT_FAILURE);
   }
   while (ifs.peek() != EOF) {
-    dict.getLine(ifs, line, labels, model.rng);
+    dict.getLine(ifs, line);
     dict.addNgrams(line, args.wordNgrams);
     if (line.size() > 0) {
-      int32_t i = model.predict(line);
-      std::cout << dict.getLabel(i) << std::endl;
+      std::cout << model.predict(line) << std::endl;
     } else {
       std::cout << "n/a" << std::endl;
     }
@@ -175,7 +180,10 @@ void predict(Dictionary& dict, Model& model, std::string filename) {
 void trainThread(Dictionary& dict, Matrix& input, Matrix& output,
                  int32_t threadId) {
   std::ifstream ifs(args.input);
-  utils::seek(ifs, threadId * utils::size(ifs) / args.thread);
+  std::ifstream ifsm(args.marginals);
+  int64_t startIdx = threadId * utils::size(ifs) / args.thread;
+  utils::seek(ifs, startIdx);
+  utils::seek(ifsm, startIdx);
 
   Model model(input, output, args.dim, args.lr, threadId);
 
@@ -184,13 +192,19 @@ void trainThread(Dictionary& dict, Matrix& input, Matrix& output,
   int64_t tokenCount = 0, printCount = 0, deltaCount = 0;
   double loss = 0.0;
   int32_t nexamples = 0;
-  std::vector<int32_t> line, labels;
+  std::vector<int32_t> line;
+  real marginal;
   while (info::allWords < args.epoch * ntokens) {
-    deltaCount = dict.getLine(ifs, line, labels, model.rng);
+    deltaCount = dict.getLine(ifs, line);
     tokenCount += deltaCount;
     printCount += deltaCount;
     dict.addNgrams(line, args.wordNgrams);
-    supervised(model, line, labels, loss, nexamples);
+    ifsm >> marginal;
+    if (ifsm.eof()) {
+      ifsm.clear();
+      ifsm.seekg(std::streampos(0));
+    }
+    supervised(model, line, marginal, loss, nexamples);
     if (tokenCount > args.lrUpdateRate) {
       info::allWords += tokenCount;
       info::allLoss += loss;
@@ -218,7 +232,7 @@ void printUsage() {
     << "The commands supported by fasttext are:\n\n"
     << "  train            train a supervised classifier\n"
     << "  test             evaluate a supervised classifier\n"
-    << "  predict          predict most likely label\n"
+    << "  predict          predict probability\n"
     << "  print-vectors    print vectors given a trained model\n"
     << std::endl;
 }
@@ -226,8 +240,9 @@ void printUsage() {
 void printTestUsage() {
   std::cout
     << "usage: fasttext test <model> <test-data>\n\n"
-    << "  <model>      model filename\n"
-    << "  <test-data>  test data filename\n"
+    << "  <model>          model filename\n"
+    << "  <test-data>      test data filename\n"
+    << "  <test-marginals> test marginals filename\n"
     << std::endl;
 }
 
@@ -247,7 +262,7 @@ void printPrintVectorsUsage() {
 }
 
 void test(int argc, char** argv) {
-  if (argc != 4) {
+  if (argc != 5) {
     printTestUsage();
     exit(EXIT_FAILURE);
   }
@@ -255,7 +270,7 @@ void test(int argc, char** argv) {
   Matrix input, output;
   loadModel(std::string(argv[2]), dict, input, output);
   Model model(input, output, args.dim, args.lr, 1);
-  test(dict, model, std::string(argv[3]));
+  test(dict, model, std::string(argv[3]), std::string(argv[4]));
   exit(0);
 }
 
@@ -298,7 +313,7 @@ void train(int argc, char** argv) {
 
   Matrix input(dict.nwords() + args.bucket, args.dim);
   Matrix output;
-  output = Matrix(dict.nlabels(), args.dim);
+  output = Matrix(1, args.dim);
   input.uniform(1.0 / args.dim);
   output.zero();
 

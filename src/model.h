@@ -11,7 +11,6 @@
 #define FASTTEXT_MODEL_H
 
 #include <vector>
-#include <random>
 
 #include "matrix.h"
 #include "vector.h"
@@ -26,7 +25,6 @@ class Model {
     Vector grad_;
     int32_t hsz_;
     int32_t isz_;
-    int32_t osz_;
 
     static real lr_;
 
@@ -42,12 +40,10 @@ class Model {
     void setLearningRate(real);
     real getLearningRate();
 
-    real softmax(int32_t);
+    real logistic_loss(real);
 
-    int32_t predict(const std::vector<int32_t>&);
-    real update(const std::vector<int32_t>&, int32_t);
-
-    std::minstd_rand rng;
+    real predict(const std::vector<int32_t>&);
+    real update(const std::vector<int32_t>&, real);
 };
 
 #endif
