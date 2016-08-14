@@ -10,6 +10,7 @@
 #include "model.h"
 
 #include <math.h>
+#include <iostream>
 
 #include "args.h"
 #include "utils.h"
@@ -38,12 +39,12 @@ real Model::getLearningRate() {
 real Model::logistic_loss(real marginal) {
   grad_.zero();
   output_.mul(wo_, hidden_);
+  std::cout << output_[0] << std::endl;
   real h = 1.0 / (1.0 + exp(-output_[0]));
   real alpha = lr_ * (h - marginal);
   grad_.addRow(wo_, 0, alpha);
   wo_.addRow(hidden_, 0, alpha);
-  return -(marginal * utils::log(output_[0]) +
-           (1.0-marginal) * utils::log(1.0 - output_[0]));
+  return -(marginal * utils::log(h) + (1.0-marginal) * utils::log(1.0 - h));
 }
 
 real Model::predict(const std::vector<int32_t>& input) {
@@ -54,7 +55,7 @@ real Model::predict(const std::vector<int32_t>& input) {
   hidden_.mul(1.0 / input.size());
 
   output_.mul(wo_, hidden_);
-  return output_[0];
+  return 1.0 / (1.0 + exp(-output_[0]));
 }
 
 real Model::update(const std::vector<int32_t>& input, real marginal) {
