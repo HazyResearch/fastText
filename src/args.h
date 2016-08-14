@@ -16,6 +16,7 @@ class Args {
   public:
     Args();
     std::string input;
+    std::string marginals;
     std::string test;
     std::string output;
     double lr;
@@ -29,7 +30,6 @@ class Args {
     int maxn;
     int thread;
     double t;
-    std::string label;
 
     void parseArgs(int, char**);
     void printHelp();
