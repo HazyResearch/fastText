@@ -9,6 +9,8 @@
 
 #include "model.h"
 
+#include <math.h>
+
 #include "args.h"
 #include "utils.h"
 
