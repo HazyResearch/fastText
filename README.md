@@ -40,6 +40,7 @@ Empty input or output path.
 
 The following arguments are mandatory:
   -input      training file path
+  -marginals  training marginals file path
   -output     output file path
 
 The following arguments are optional:
@@ -54,7 +55,6 @@ The following arguments are optional:
   -thread     number of threads [12]
   -verbose    how often to print to stdout [10000]
   -t          sampling threshold [0.0001]
-  -label      labels prefix [__label__]
 ```
 
 ## References
