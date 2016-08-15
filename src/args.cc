@@ -83,6 +83,11 @@ void Args::parseArgs(int argc, char** argv) {
     printHelp();
     exit(EXIT_FAILURE);
   }
+  if (argv[1] == "train" && marginals.empty()) {
+    std::cout << "Empty training marginals." << std::endl;
+    printHelp();
+    exit(EXIT_FAILURE);
+  }
 }
 
 void Args::printHelp() {
