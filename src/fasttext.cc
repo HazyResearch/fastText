@@ -146,7 +146,7 @@ void test(Dictionary& dict, Model& model, std::string data,
     }
     if (line.size() > 0) {
       real prob = model.predict(line);
-      if ((prob >= 0.5) == (marginal >= 0.5)) {
+      if ((prob > 0.5) == (marginal > 0.5)) {
         precision += 1.0;
       }
       nexamples++;
@@ -185,7 +185,7 @@ void trainThread(Dictionary& dict, Matrix& input, Matrix& output,
   utils::seek(ifs, startIdx);
   utils::seek(ifsm, startIdx);
 
-  Model model(input, output, args.dim, args.lr, threadId);
+  Model model(input, output, args.dim, args.lr);
 
   real progress;
   const int64_t ntokens = dict.ntokens();
@@ -269,7 +269,7 @@ void test(int argc, char** argv) {
   Dictionary dict;
   Matrix input, output;
   loadModel(std::string(argv[2]), dict, input, output);
-  Model model(input, output, args.dim, args.lr, 1);
+  Model model(input, output, args.dim, args.lr);
   test(dict, model, std::string(argv[3]), std::string(argv[4]));
   exit(0);
 }
@@ -282,7 +282,7 @@ void predict(int argc, char** argv) {
   Dictionary dict;
   Matrix input, output;
   loadModel(std::string(argv[2]), dict, input, output);
-  Model model(input, output, args.dim, args.lr, 1);
+  Model model(input, output, args.dim, args.lr);
   predict(dict, model, std::string(argv[3]));
   exit(0);
 }
@@ -313,7 +313,7 @@ void train(int argc, char** argv) {
 
   Matrix input(dict.nwords() + args.bucket, args.dim);
   Matrix output;
-  output = Matrix(1, args.dim);
+  output = Matrix(2, args.dim);
   input.uniform(1.0 / args.dim);
   output.zero();
 

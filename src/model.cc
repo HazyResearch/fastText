@@ -19,13 +19,12 @@ extern Args args;
 
 real Model::lr_ = MIN_LR;
 
-Model::Model(Matrix& wi, Matrix& wo, int32_t hsz, real lr, int32_t seed)
-            : wi_(wi), wo_(wo), hidden_(hsz), output_(wo.m_),
+Model::Model(Matrix& wi, Matrix& wo, int32_t hsz, real lr)
+            : wi_(wi), wo_(wo), hidden_(hsz), output_(2),
               grad_(hsz) {
   isz_ = wi.m_;
   hsz_ = hsz;
   lr_ = lr;
-  negpos = 0;
 }
 
 void Model::setLearningRate(real lr) {
@@ -36,15 +35,22 @@ real Model::getLearningRate() {
   return lr_;
 }
 
-real Model::logistic_loss(real marginal) {
+real Model::softmax(real marginal) {
   grad_.zero();
   output_.mul(wo_, hidden_);
-  std::cout << output_[0] << std::endl;
-  real h = 1.0 / (1.0 + exp(-output_[0]));
-  real alpha = lr_ * (h - marginal);
-  grad_.addRow(wo_, 0, alpha);
-  wo_.addRow(hidden_, 0, alpha);
-  return -(marginal * utils::log(h) + (1.0-marginal) * utils::log(1.0 - h));
+  real max = std::max(output_[0], output_[1]);
+  output_[0] = exp(output_[0] - max);
+  output_[1] = exp(output_[1] - max);
+  real z = output_[0] + output_[1];
+  real p[] = {real(1.0)-marginal, marginal};
+  for (int32_t i = 0; i < 2; i++) {
+    output_[i] /= z;
+    real alpha = lr_ * (p[i] - output_[i]);
+    grad_.addRow(wo_, i, alpha);
+    wo_.addRow(hidden_, i, alpha);
+  }
+  int target = (marginal > 0.5) ? 1 : 0;
+  return -utils::log(output_[target]);
 }
 
 real Model::predict(const std::vector<int32_t>& input) {
@@ -55,7 +61,7 @@ real Model::predict(const std::vector<int32_t>& input) {
   hidden_.mul(1.0 / input.size());
 
   output_.mul(wo_, hidden_);
-  return 1.0 / (1.0 + exp(-output_[0]));
+  return 1.0 / (1.0 + exp(-output_[1]));
 }
 
 real Model::update(const std::vector<int32_t>& input, real marginal) {
@@ -66,7 +72,7 @@ real Model::update(const std::vector<int32_t>& input, real marginal) {
   }
   hidden_.mul(1.0 / input.size());
 
-  real loss = logistic_loss(marginal);
+  real loss = softmax(marginal);
   grad_.mul(1.0 / input.size());
 
   for (auto it = input.cbegin(); it != input.cend(); ++it) {

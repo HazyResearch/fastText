@@ -49,7 +49,7 @@ divider "BUILDING"
 make clean
 make
 
-OPTS="-dim 64 -lr 0.0115 -wordNgrams 2 -minCount 1 -bucket 10000000 -epoch 10 -thread 12"
+OPTS="-dim 64 -lr 0.1 -wordNgrams 2 -minCount 1 -bucket 10000000 -epoch 10 -thread 12"
 
 divider "TRAINING"
 time ./fasttext train -input "${DATADIR}/dbpedia.train" -output "${RESULTDIR}/dbpedia" -marginals "${DATADIR}/dbpedia.train.marginals" ${OPTS}

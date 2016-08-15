@@ -28,19 +28,15 @@ class Model {
 
     static real lr_;
 
-    size_t negpos;
-    std::vector< std::vector<int32_t> > paths;
-    std::vector< std::vector<bool> > codes;
-
     static constexpr real MIN_LR = 0.000001;
 
   public:
-    Model(Matrix&, Matrix&, int32_t, real, int32_t);
+    Model(Matrix&, Matrix&, int32_t, real);
 
     void setLearningRate(real);
     real getLearningRate();
 
-    real logistic_loss(real);
+    real softmax(real);
 
     real predict(const std::vector<int32_t>&);
     real update(const std::vector<int32_t>&, real);
