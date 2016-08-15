@@ -28,7 +28,6 @@ const std::string Dictionary::EOW = ">";
 Dictionary::Dictionary() {
   size_ = 0;
   nwords_ = 0;
-  nlabels_ = 0;
   ntokens_ = 0;
   word2int_.resize(MAX_VOCAB_SIZE);
   for (int32_t i = 0; i < MAX_VOCAB_SIZE; i++) {
@@ -51,7 +50,6 @@ void Dictionary::add(const std::string& w) {
     entry e;
     e.word = w;
     e.count = 1;
-    e.type = (w.find(args.label) == 0) ? entry_type::label : entry_type::word;
     words_.push_back(e);
     word2int_[h] = size_++;
   } else {
@@ -61,10 +59,6 @@ void Dictionary::add(const std::string& w) {
 
 int32_t Dictionary::nwords() {
   return nwords_;
-}
-
-int32_t Dictionary::nlabels() {
-  return nlabels_;
 }
 
 int64_t Dictionary::ntokens() {
@@ -91,12 +85,6 @@ const std::vector<int32_t> Dictionary::getNgrams(const std::string& word) {
 int32_t Dictionary::getId(const std::string& w) {
   int32_t h = find(w);
   return word2int_[h];
-}
-
-entry_type Dictionary::getType(int32_t id) {
-  assert(id >= 0);
-  assert(id < size_);
-  return words_[id].type;
 }
 
 std::string Dictionary::getWord(int32_t id) {
@@ -179,7 +167,6 @@ void Dictionary::readFromFile(std::ifstream& ifs) {
 
 void Dictionary::threshold(int64_t t) {
   sort(words_.begin(), words_.end(), [](const entry& e1, const entry& e2) {
-      if (e1.type != e2.type) return e1.type < e2.type;
       return e1.count > e2.count;
     });
   words_.erase(remove_if(words_.begin(), words_.end(), [&](const entry& e) {
@@ -188,22 +175,20 @@ void Dictionary::threshold(int64_t t) {
   words_.shrink_to_fit();
   size_ = 0;
   nwords_ = 0;
-  nlabels_ = 0;
   for (int32_t i = 0; i < MAX_VOCAB_SIZE; i++) {
     word2int_[i] = -1;
   }
   for (auto it = words_.begin(); it != words_.end(); ++it) {
     int32_t h = find(it->word);
     word2int_[h] = size_++;
-    if (it->type == entry_type::word) nwords_++;
-    if (it->type == entry_type::label) nlabels_++;
+    nwords_++;
   }
 }
 
-std::vector<int64_t> Dictionary::getCounts(entry_type type) {
+std::vector<int64_t> Dictionary::getCounts() {
   std::vector<int64_t> counts;
   for (auto& w : words_) {
-    if (w.type == type) counts.push_back(w.count);
+    counts.push_back(w.count);
   }
   return counts;
 }
@@ -220,14 +205,10 @@ void Dictionary::addNgrams(std::vector<int32_t>& line, int32_t n) {
 }
 
 int32_t Dictionary::getLine(std::ifstream& ifs,
-                            std::vector<int32_t>& words,
-                            std::vector<int32_t>& labels,
-                            std::minstd_rand& rng) {
-  std::uniform_real_distribution<> uniform(0, 1);
+                            std::vector<int32_t>& words) {
   std::string token;
   int32_t ntokens = 0;
   words.clear();
-  labels.clear();
   if (ifs.eof()) {
     ifs.clear();
     ifs.seekg(std::streampos(0));
@@ -237,34 +218,20 @@ int32_t Dictionary::getLine(std::ifstream& ifs,
     if (token == EOS) break;
     int32_t wid = getId(token);
     if (wid < 0) continue;
-    entry_type type = getType(wid);
-    if (type == entry_type::word) {
-      words.push_back(wid);
-    }
-    if (type == entry_type::label) {
-      labels.push_back(wid - nwords_);
-    }
+    words.push_back(wid);
   }
   return ntokens;
-}
-
-std::string Dictionary::getLabel(int32_t lid) {
-  assert(lid >= 0);
-  assert(lid < nlabels_);
-  return words_[lid + nwords_].word;
 }
 
 void Dictionary::save(std::ofstream& ofs) {
   ofs.write((char*) &size_, sizeof(int32_t));
   ofs.write((char*) &nwords_, sizeof(int32_t));
-  ofs.write((char*) &nlabels_, sizeof(int32_t));
   ofs.write((char*) &ntokens_, sizeof(int64_t));
   for (int32_t i = 0; i < size_; i++) {
     entry e = words_[i];
     ofs.write(e.word.data(), e.word.size() * sizeof(char));
     ofs.put(0);
     ofs.write((char*) &(e.count), sizeof(int64_t));
-    ofs.write((char*) &(e.type), sizeof(entry_type));
   }
 }
 
@@ -275,7 +242,6 @@ void Dictionary::load(std::ifstream& ifs) {
   }
   ifs.read((char*) &size_, sizeof(int32_t));
   ifs.read((char*) &nwords_, sizeof(int32_t));
-  ifs.read((char*) &nlabels_, sizeof(int32_t));
   ifs.read((char*) &ntokens_, sizeof(int64_t));
   for (int32_t i = 0; i < size_; i++) {
     char c;
@@ -284,7 +250,6 @@ void Dictionary::load(std::ifstream& ifs) {
       e.word.push_back(c);
     }
     ifs.read((char*) &e.count, sizeof(int64_t));
-    ifs.read((char*) &e.type, sizeof(entry_type));
     words_.push_back(e);
     word2int_[find(e.word)] = i;
   }

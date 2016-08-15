@@ -27,7 +27,6 @@ Args::Args() {
   thread = 12;
   lrUpdateRate = 100;
   t = 1e-4;
-  label = "__label__";
 }
 
 void Args::parseArgs(int argc, char** argv) {
@@ -44,6 +43,8 @@ void Args::parseArgs(int argc, char** argv) {
       exit(EXIT_FAILURE);
     } else if (strcmp(argv[ai], "-input") == 0) {
       input = std::string(argv[ai + 1]);
+    } else if (strcmp(argv[ai], "-marginals") == 0) {
+      marginals = std::string(argv[ai + 1]);
     } else if (strcmp(argv[ai], "-test") == 0) {
       test = std::string(argv[ai + 1]);
     } else if (strcmp(argv[ai], "-output") == 0) {
@@ -70,8 +71,6 @@ void Args::parseArgs(int argc, char** argv) {
       thread = atoi(argv[ai + 1]);
     } else if (strcmp(argv[ai], "-t") == 0) {
       t = atof(argv[ai + 1]);
-    } else if (strcmp(argv[ai], "-label") == 0) {
-      label = std::string(argv[ai + 1]);
     } else {
       std::cout << "Unknown argument: " << argv[ai] << std::endl;
       printHelp();
@@ -84,6 +83,11 @@ void Args::parseArgs(int argc, char** argv) {
     printHelp();
     exit(EXIT_FAILURE);
   }
+  if (argv[1] == "train" && marginals.empty()) {
+    std::cout << "Empty training marginals." << std::endl;
+    printHelp();
+    exit(EXIT_FAILURE);
+  }
 }
 
 void Args::printHelp() {
@@ -91,6 +95,7 @@ void Args::printHelp() {
     << "\n"
     << "The following arguments are mandatory:\n"
     << "  -input        training file path\n"
+    << "  -marginals    training marginals file path\n"
     << "  -output       output file path\n\n"
     << "The following arguments are optional:\n"
     << "  -lr           learning rate [" << lr << "]\n"
@@ -104,7 +109,6 @@ void Args::printHelp() {
     << "  -maxn         max length of char ngram [" << maxn << "]\n"
     << "  -thread       number of threads [" << thread << "]\n"
     << "  -t            sampling threshold [" << t << "]\n"
-    << "  -label        labels prefix [" << label << "]\n"
     << std::endl;
 }
 
